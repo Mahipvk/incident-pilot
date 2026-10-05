@@ -30,7 +30,9 @@ public class KnowledgeBase {
             return List.of("No relevant " + type + " found.");
         }
         return docs.stream()
-                .map(d -> "[source: " + d.getMetadata().get("source") + "]\n" + d.getText())
+                .map(d -> "[source: " + d.getMetadata().get("source")
+                        + " | similarity " + (d.getScore() == null ? "n/a" : String.format("%.2f", d.getScore())) + "]\n"
+                        + d.getText())
                 .toList();
     }
 }

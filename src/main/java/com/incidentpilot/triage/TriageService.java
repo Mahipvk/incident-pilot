@@ -34,17 +34,30 @@ public class TriageService {
             Services: edge-gateway, upload-service, transfer-worker, notification-service, auth-service, sftp-proxy.
             Investigate the alert like an expert on-call engineer:
             1. Call getServiceHealth to see what is degraded or down.
-            2. Call searchLogs for each suspicious service with keyword ERROR, then WARN. Also check auth-service and edge-gateway logs when relevant.
+            2. Call searchLogs for EVERY service that is DEGRADED or DOWN, with keyword ERROR, then WARN.
+               Also search the logs of every service named in the alert, and of services that call it or that it depends on.
             3. Call searchRunbooks and findSimilarIncidents using the specific error messages you found.
             Then write your findings in plain English: what is broken, the exact log lines that prove it,
             the most likely root cause, and which runbook or past incident matches.
+            Past incidents are hints, not answers: the current health and logs decide the root cause.
             Only state facts supported by tool output. Never invent log lines or file names.
             """;
 
     static final String REPORTER_PROMPT = """
             You write incident triage reports as JSON. Use ONLY the alert, the investigation notes and the tool output given.
-            rootCauseCategory must be exactly one of: UPSTREAM_TIMEOUT, CREDENTIAL_EXPIRED, DISK_FULL, TLS_HANDSHAKE,
-            QUEUE_BACKLOG, MEMORY_EXHAUSTION, UNKNOWN.
+            rootCauseCategory must be exactly one of these (pick the one the CURRENT logs and health prove):
+            - UPSTREAM_TIMEOUT: gateway 504s / requests exceeding a timeout because a backend is slow
+            - CREDENTIAL_EXPIRED: auth failures (401, Auth fail) caused by rotated, expired or stale credentials
+            - DISK_FULL: "No space left on device", ENOSPC, a filesystem at or near 100%
+            - TLS_HANDSHAKE: TLS handshake failures, no shared cipher, protocol version mismatch
+            - QUEUE_BACKLOG: messages piling up, delayed or expiring because a consumer is down, crashing or too slow,
+              including when the consumer crashes because one of ITS dependencies (SMTP relay, database) is unreachable
+            - MEMORY_EXHAUSTION: OutOfMemoryError, OOMKilled, heap exhaustion
+            - UNKNOWN: the evidence does not support any of the above
+            Pick the category of the main failure mode the alert describes; explain the deeper cause in probableRootCause.
+            In sources, list only the runbooks and incidents that match the chosen category and the evidence.
+            Past incidents are only hints. If a past incident's symptoms do not appear in the current logs, ignore it
+            and do not cite it. Low similarity scores (below about 0.6) usually mean a weak match.
             Quote real log lines as evidence. List the runbook / incident file names you relied on as sources
             (they appear in the tool output as [source: file-name.md]).
             """;

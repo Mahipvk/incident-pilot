@@ -91,10 +91,10 @@ $('evals').onclick = async () => {
     $('evalOut').innerHTML = `
       <h3 style="margin-top:0">Eval results &middot; ${esc(d.model)}</h3>
       <p><b>${d.correct}/${d.total}</b> correct (${Math.round(d.accuracy*100)}% accuracy) &middot;
-         ${Math.round(d.citationRate*100)}% cited a source &middot; avg ${(d.avgMillis/1000).toFixed(1)}s per incident</p>
-      <table><tr><th>Snapshot</th><th>Expected</th><th>Agent said</th><th>Tool calls</th><th>Time</th><th></th></tr>
+         ${Math.round(d.citationRate*100)}% cited a source &middot; ${Math.round(d.rightRunbookRate*100)}% cited the right runbook &middot; avg ${(d.avgMillis/1000).toFixed(1)}s per incident</p>
+      <table><tr><th>Snapshot</th><th>Expected</th><th>Agent said</th><th>Right runbook</th><th>Tool calls</th><th>Time</th><th></th></tr>
       ${d.rows.map(x => `<tr><td>${esc(x.snapshotId)}</td><td>${esc(x.expected)}</td><td>${esc(x.actual)}</td>
-        <td>${x.toolCalls}</td><td>${(x.millis/1000).toFixed(1)}s</td>
+        <td>${x.citedRightRunbook ? 'yes' : 'no'}</td><td>${x.toolCalls}</td><td>${(x.millis/1000).toFixed(1)}s</td>
         <td class="${x.correct ? 'ok' : 'bad'}">${x.correct ? 'PASS' : 'FAIL'}</td></tr>`).join('')}
       </table>`;
     busy(false, 'Evals finished.');
