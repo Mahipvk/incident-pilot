@@ -1,0 +1,64 @@
+{
+  "id": "memory-oom",
+  "title": "Transfer workers restarting",
+  "alert": "Alert: transfer-worker pods restarted 9 times in 30 minutes; transfers of large files stuck at 'in progress'.",
+  "expectedCategory": "MEMORY_EXHAUSTION",
+  "health": {
+    "edge-gateway": "UP | p95 120ms | 5xx 0.1%",
+    "upload-service": "UP | p95 340ms | 5xx 0.2%",
+    "transfer-worker": "DEGRADED | 1/4 pods ready | restarts 9 | last state OOMKilled",
+    "notification-service": "UP | 2/2 pods ready",
+    "auth-service": "UP | p95 45ms",
+    "sftp-proxy": "UP | /var 41% used | 210 sessions"
+  },
+  "logs": [
+    {
+      "ts": "2026-09-14T09:58:02Z",
+      "service": "auth-service",
+      "level": "INFO",
+      "message": "token issued client=acme-bank scope=upload"
+    },
+    {
+      "ts": "2026-09-14T09:59:40Z",
+      "service": "notification-service",
+      "level": "INFO",
+      "message": "email batch sent count=42"
+    },
+    {
+      "ts": "2026-09-14T10:00:15Z",
+      "service": "auth-service",
+      "level": "WARN",
+      "message": "slow LDAP bind 820ms (threshold 500ms)"
+    },
+    {
+      "ts": "2026-09-14T11:02:10Z",
+      "service": "transfer-worker",
+      "level": "WARN",
+      "message": "GC overhead high: 97% of time in GC over last 60s, heap 1.98GB/2GB"
+    },
+    {
+      "ts": "2026-09-14T11:02:31Z",
+      "service": "transfer-worker",
+      "level": "ERROR",
+      "message": "java.lang.OutOfMemoryError: Java heap space at FileChecksumService.readFully(FileChecksumService.java:88)"
+    },
+    {
+      "ts": "2026-09-14T11:02:32Z",
+      "service": "transfer-worker",
+      "level": "ERROR",
+      "message": "pod transfer-worker-7c9f terminated reason=OOMKilled exitCode=137"
+    },
+    {
+      "ts": "2026-09-14T11:03:00Z",
+      "service": "transfer-worker",
+      "level": "INFO",
+      "message": "processing file id=88231 size=3.4GB checksum=SHA-256 mode=in-memory"
+    },
+    {
+      "ts": "2026-09-14T11:05:40Z",
+      "service": "edge-gateway",
+      "level": "WARN",
+      "message": "p95 latency 900ms on GET /api/v2/files/status"
+    }
+  ]
+}

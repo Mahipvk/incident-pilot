@@ -1,0 +1,76 @@
+{
+  "id": "upload-timeout",
+  "title": "Partner uploads failing with 504",
+  "alert": "PagerDuty: edge-gateway 5xx rate 18% (threshold 2%) for client partner-clearview. Users report large file uploads failing with 504 Gateway Timeout.",
+  "expectedCategory": "UPSTREAM_TIMEOUT",
+  "health": {
+    "edge-gateway": "DEGRADED | p95 61000ms | 5xx 18%",
+    "upload-service": "DEGRADED | p95 58000ms | busy threads 196/200",
+    "transfer-worker": "UP | 4/4 pods ready | backlog 12",
+    "notification-service": "UP | 2/2 pods ready",
+    "auth-service": "UP | p95 45ms",
+    "sftp-proxy": "UP | /var 41% used | 210 sessions"
+  },
+  "logs": [
+    {
+      "ts": "2026-09-14T09:58:02Z",
+      "service": "auth-service",
+      "level": "INFO",
+      "message": "token issued client=acme-bank scope=upload"
+    },
+    {
+      "ts": "2026-09-14T09:59:40Z",
+      "service": "notification-service",
+      "level": "INFO",
+      "message": "email batch sent count=42"
+    },
+    {
+      "ts": "2026-09-14T10:00:15Z",
+      "service": "auth-service",
+      "level": "WARN",
+      "message": "slow LDAP bind 820ms (threshold 500ms)"
+    },
+    {
+      "ts": "2026-09-14T10:01:03Z",
+      "service": "edge-gateway",
+      "level": "ERROR",
+      "message": "504 upstream timeout after 60000ms POST /api/v2/files client=partner-clearview size=2.1GB"
+    },
+    {
+      "ts": "2026-09-14T10:01:05Z",
+      "service": "upload-service",
+      "level": "WARN",
+      "message": "multipart upload not chunked: single part 2147483648 bytes from client=partner-clearview"
+    },
+    {
+      "ts": "2026-09-14T10:01:09Z",
+      "service": "upload-service",
+      "level": "WARN",
+      "message": "request still reading body after 59s, bytesRead=1.3GB threadPoolActive=196/200"
+    },
+    {
+      "ts": "2026-09-14T10:02:11Z",
+      "service": "edge-gateway",
+      "level": "ERROR",
+      "message": "504 upstream timeout after 60000ms POST /api/v2/files client=partner-clearview size=1.8GB"
+    },
+    {
+      "ts": "2026-09-14T10:02:15Z",
+      "service": "upload-service",
+      "level": "ERROR",
+      "message": "ClientAbortException: connection reset by peer while reading multipart body"
+    },
+    {
+      "ts": "2026-09-14T10:03:00Z",
+      "service": "edge-gateway",
+      "level": "INFO",
+      "message": "200 POST /api/v2/files client=acme-bank size=4MB 310ms"
+    },
+    {
+      "ts": "2026-09-14T10:03:30Z",
+      "service": "upload-service",
+      "level": "INFO",
+      "message": "chunked upload completed client=acme-bank parts=1 size=4MB"
+    }
+  ]
+}

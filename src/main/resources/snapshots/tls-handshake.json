@@ -1,0 +1,58 @@
+{
+  "id": "tls-handshake",
+  "title": "Some partners can no longer connect",
+  "alert": "Ticket: Two external partners (legacy-bank, mutual-co) cannot connect since this morning's change window. Other partners OK.",
+  "expectedCategory": "TLS_HANDSHAKE",
+  "health": {
+    "edge-gateway": "UP | p95 130ms | TLS handshake failures 340/hr",
+    "upload-service": "UP | p95 340ms | 5xx 0.2%",
+    "transfer-worker": "UP | 4/4 pods ready | backlog 12",
+    "notification-service": "UP | 2/2 pods ready",
+    "auth-service": "UP | p95 45ms",
+    "sftp-proxy": "UP | /var 41% used | 210 sessions"
+  },
+  "logs": [
+    {
+      "ts": "2026-09-14T09:58:02Z",
+      "service": "auth-service",
+      "level": "INFO",
+      "message": "token issued client=acme-bank scope=upload"
+    },
+    {
+      "ts": "2026-09-14T09:59:40Z",
+      "service": "notification-service",
+      "level": "INFO",
+      "message": "email batch sent count=42"
+    },
+    {
+      "ts": "2026-09-14T10:00:15Z",
+      "service": "auth-service",
+      "level": "WARN",
+      "message": "slow LDAP bind 820ms (threshold 500ms)"
+    },
+    {
+      "ts": "2026-09-14T06:00:00Z",
+      "service": "edge-gateway",
+      "level": "INFO",
+      "message": "config reload: tls.ciphers updated, removed TLS_RSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_256_CBC_SHA"
+    },
+    {
+      "ts": "2026-09-14T06:14:22Z",
+      "service": "edge-gateway",
+      "level": "ERROR",
+      "message": "TLS handshake failed client=legacy-bank: no shared cipher (client offered: TLS_RSA_WITH_AES_128_CBC_SHA)"
+    },
+    {
+      "ts": "2026-09-14T06:15:03Z",
+      "service": "edge-gateway",
+      "level": "ERROR",
+      "message": "TLS handshake failed client=mutual-co: no shared cipher, client max version TLSv1.1"
+    },
+    {
+      "ts": "2026-09-14T06:20:10Z",
+      "service": "edge-gateway",
+      "level": "INFO",
+      "message": "200 POST /api/v2/files client=acme-bank tls=TLSv1.3 TLS_AES_256_GCM_SHA384"
+    }
+  ]
+}

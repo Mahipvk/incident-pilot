@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IncidentPilot</title>
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --ink:#1c2330; --muted:#5d6878; --line:#dde2e8; --accent:#2457d6; --ok:#1e8a4c; --bad:#c23a2b; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--ink); }
+  header { padding:20px 24px; border-bottom:1px solid var(--line); background:var(--card); }
+  header h1 { margin:0; font-size:20px; } header p { margin:4px 0 0; color:var(--muted); }
+  main { max-width:1000px; margin:0 auto; padding:20px 16px 60px; display:grid; gap:16px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px 18px; }
+  label { font-weight:600; display:block; margin-bottom:6px; }
+  select, textarea { width:100%; font:inherit; padding:8px 10px; border:1px solid var(--line); border-radius:8px; }
+  textarea { min-height:80px; }
+  button { font:inherit; font-weight:600; padding:9px 16px; border:0; border-radius:8px; background:var(--accent); color:#fff; cursor:pointer; margin-top:10px; }
+  button.secondary { background:#e9edf5; color:var(--ink); }
+  button:disabled { opacity:.5; cursor:wait; }
+  .pill { display:inline-block; padding:2px 10px; border-radius:99px; background:#e9edf5; font-weight:600; font-size:13px; }
+  .muted { color:var(--muted); font-size:13px; }
+  ul { margin:6px 0; padding-left:20px; } code, .mono { font-family:ui-monospace,Consolas,monospace; font-size:13px; }
+  table { width:100%; border-collapse:collapse; font-size:14px; } td, th { text-align:left; padding:6px 8px; border-bottom:1px solid var(--line); }
+  .ok { color:var(--ok); font-weight:700; } .bad { color:var(--bad); font-weight:700; }
+  h3 { margin:14px 0 4px; font-size:15px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>IncidentPilot</h1>
+  <p>AI incident-triage agent &middot; Spring AI &middot; RAG over runbooks &middot; tool calling &middot; runs 100% locally</p>
+</header>
+<main>
+  <section class="card">
+    <label for="snap">Incident snapshot</label>
+    <select id="snap"></select>
+    <label for="alert" style="margin-top:12px">Alert text (editable)</label>
+    <textarea id="alert"></textarea>
+    <button id="go">Triage this incident</button>
+    <button id="evals" class="secondary">Run evals on all snapshots</button>
+    <div id="status" class="muted" style="margin-top:8px"></div>
+  </section>
+  <section class="card" id="result" hidden></section>
+  <section class="card" id="evalOut" hidden></section>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const list = a => (a && a.length) ? '<ul>' + a.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>' : '<p class="muted">none</p>';
+let snaps = [];
+
+fetch('/api/snapshots').then(r => r.json()).then(d => {
+  snaps = d;
+  $('snap').innerHTML = d.map(s => `<option value="${esc(s.id)}">${esc(s.title)}</option>`).join('');
+  $('alert').value = d[0]?.alert || '';
+});
+$('snap').onchange = () => { $('alert').value = snaps.find(s => s.id === $('snap').value)?.alert || ''; };
+
+function busy(on, msg) { $('go').disabled = on; $('evals').disabled = on; $('status').textContent = msg || ''; }
+
+$('go').onclick = async () => {
+  busy(true, 'Agent is investigating (local models can take 1-3 minutes)...');
+  try {
+    const r = await fetch('/api/triage', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ snapshotId: $('snap').value, alert: $('alert').value }) });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || r.statusText);
+    const rep = d.report;
+    $('result').hidden = false;
+    $('result').innerHTML = `
+      <span class="pill">${esc(rep.rootCauseCategory)}</span>
+      <span class="muted">&nbsp;confidence ${Math.round((rep.confidence || 0) * 100)}% &middot; ${(d.millis/1000).toFixed(1)}s &middot; model ${esc(d.model)}</span>
+      <h3>Summary</h3><p>${esc(rep.summary)}</p>
+      <h3>Probable root cause</h3><p>${esc(rep.probableRootCause)}</p>
+      <h3>Evidence</h3>${list(rep.evidence)}
+      <h3>Recommended actions</h3>${list(rep.recommendedActions)}
+      <h3>Sources</h3>${list(rep.sources)}
+      <h3>Agent tool calls (audit trail)</h3><div class="mono">${list(d.toolTrace)}</div>`;
+    busy(false, 'Done.');
+  } catch (e) { busy(false, 'Error: ' + e.message); }
+};
+
+$('evals').onclick = async () => {
+  busy(true, 'Running every snapshot through the agent - this can take several minutes on CPU...');
+  try {
+    const r = await fetch('/api/evals', { method:'POST' });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || r.statusText);
+    $('evalOut').hidden = false;
+    $('evalOut').innerHTML = `
+      <h3 style="margin-top:0">Eval results &middot; ${esc(d.model)}</h3>
+      <p><b>${d.correct}/${d.total}</b> correct (${Math.round(d.accuracy*100)}% accuracy) &middot;
+         ${Math.round(d.citationRate*100)}% cited a source &middot; avg ${(d.avgMillis/1000).toFixed(1)}s per incident</p>
+      <table><tr><th>Snapshot</th><th>Expected</th><th>Agent said</th><th>Tool calls</th><th>Time</th><th></th></tr>
+      ${d.rows.map(x => `<tr><td>${esc(x.snapshotId)}</td><td>${esc(x.expected)}</td><td>${esc(x.actual)}</td>
+        <td>${x.toolCalls}</td><td>${(x.millis/1000).toFixed(1)}s</td>
+        <td class="${x.correct ? 'ok' : 'bad'}">${x.correct ? 'PASS' : 'FAIL'}</td></tr>`).join('')}
+      </table>`;
+    busy(false, 'Evals finished.');
+  } catch (e) { busy(false, 'Error: ' + e.message); }
+};
+</script>
+</body>
+</html>

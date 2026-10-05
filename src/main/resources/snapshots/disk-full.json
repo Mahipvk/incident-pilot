@@ -1,0 +1,64 @@
+{
+  "id": "disk-full",
+  "title": "SFTP proxy rejecting sessions",
+  "alert": "Alert: sftp-proxy new session failures; partners report 'connection closed' immediately after login.",
+  "expectedCategory": "DISK_FULL",
+  "health": {
+    "edge-gateway": "UP | p95 120ms | 5xx 0.1%",
+    "upload-service": "UP | p95 340ms | 5xx 0.2%",
+    "transfer-worker": "UP | 4/4 pods ready | backlog 12",
+    "notification-service": "UP | 2/2 pods ready",
+    "auth-service": "UP | p95 45ms",
+    "sftp-proxy": "DOWN | /var 100% used | 3 sessions"
+  },
+  "logs": [
+    {
+      "ts": "2026-09-14T09:58:02Z",
+      "service": "auth-service",
+      "level": "INFO",
+      "message": "token issued client=acme-bank scope=upload"
+    },
+    {
+      "ts": "2026-09-14T09:59:40Z",
+      "service": "notification-service",
+      "level": "INFO",
+      "message": "email batch sent count=42"
+    },
+    {
+      "ts": "2026-09-14T10:00:15Z",
+      "service": "auth-service",
+      "level": "WARN",
+      "message": "slow LDAP bind 820ms (threshold 500ms)"
+    },
+    {
+      "ts": "2026-09-14T10:10:01Z",
+      "service": "sftp-proxy",
+      "level": "ERROR",
+      "message": "failed to write session log /var/log/sftp-proxy/session.log: No space left on device"
+    },
+    {
+      "ts": "2026-09-14T10:10:02Z",
+      "service": "sftp-proxy",
+      "level": "ERROR",
+      "message": "session aborted for user partner-c: cannot create audit record (ENOSPC)"
+    },
+    {
+      "ts": "2026-09-14T10:10:30Z",
+      "service": "sftp-proxy",
+      "level": "WARN",
+      "message": "log rotation skipped: logrotate config missing for /var/log/sftp-proxy/debug.log (38GB)"
+    },
+    {
+      "ts": "2026-09-14T10:11:00Z",
+      "service": "sftp-proxy",
+      "level": "ERROR",
+      "message": "No space left on device writing /var/tmp/upload-staging/abc123.part"
+    },
+    {
+      "ts": "2026-09-14T10:11:45Z",
+      "service": "upload-service",
+      "level": "WARN",
+      "message": "upstream sftp-proxy health check failed 3 times"
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "id": "queue-backlog",
+  "title": "Delivery notifications delayed hours",
+  "alert": "Alert: notification queue depth 48,000 and rising; partners complaining they get 'file ready' emails hours late.",
+  "expectedCategory": "QUEUE_BACKLOG",
+  "health": {
+    "edge-gateway": "UP | p95 120ms | 5xx 0.1%",
+    "upload-service": "UP | p95 340ms | 5xx 0.2%",
+    "transfer-worker": "UP | 4/4 pods ready | backlog 15",
+    "notification-service": "DOWN | 0/2 pods ready | CrashLoopBackOff",
+    "auth-service": "UP | p95 45ms",
+    "sftp-proxy": "UP | /var 41% used | 210 sessions"
+  },
+  "logs": [
+    {
+      "ts": "2026-09-14T09:58:02Z",
+      "service": "auth-service",
+      "level": "INFO",
+      "message": "token issued client=acme-bank scope=upload"
+    },
+    {
+      "ts": "2026-09-14T09:59:40Z",
+      "service": "notification-service",
+      "level": "INFO",
+      "message": "email batch sent count=42"
+    },
+    {
+      "ts": "2026-09-14T10:00:15Z",
+      "service": "auth-service",
+      "level": "WARN",
+      "message": "slow LDAP bind 820ms (threshold 500ms)"
+    },
+    {
+      "ts": "2026-09-14T08:30:00Z",
+      "service": "notification-service",
+      "level": "ERROR",
+      "message": "consumer failed to start: unable to connect to SMTP relay smtp-relay.internal:587 (connection refused)"
+    },
+    {
+      "ts": "2026-09-14T08:30:05Z",
+      "service": "notification-service",
+      "level": "ERROR",
+      "message": "container exited code 1, restart 14 (CrashLoopBackOff)"
+    },
+    {
+      "ts": "2026-09-14T08:45:00Z",
+      "service": "transfer-worker",
+      "level": "WARN",
+      "message": "publish to topic file-delivered: queue depth 41,220 exceeds warning threshold 10,000"
+    },
+    {
+      "ts": "2026-09-14T09:10:00Z",
+      "service": "transfer-worker",
+      "level": "WARN",
+      "message": "publish to topic file-delivered: queue depth 48,015; 1,203 messages moved to DLQ after TTL expiry"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "id": "cred-expired",
+  "title": "Outbound transfers failing after rotation",
+  "alert": "Alert: transfer-worker outbound delivery failures 100% for the last 25 minutes. Partners not receiving files since ~02:05.",
+  "expectedCategory": "CREDENTIAL_EXPIRED",
+  "health": {
+    "edge-gateway": "UP | p95 120ms | 5xx 0.1%",
+    "upload-service": "UP | p95 340ms | 5xx 0.2%",
+    "transfer-worker": "DEGRADED | 4/4 pods ready | backlog 1,840 | failures 100%",
+    "notification-service": "UP | 2/2 pods ready",
+    "auth-service": "UP | p95 45ms",
+    "sftp-proxy": "UP | /var 41% used | 210 sessions"
+  },
+  "logs": [
+    {
+      "ts": "2026-09-14T09:58:02Z",
+      "service": "auth-service",
+      "level": "INFO",
+      "message": "token issued client=acme-bank scope=upload"
+    },
+    {
+      "ts": "2026-09-14T09:59:40Z",
+      "service": "notification-service",
+      "level": "INFO",
+      "message": "email batch sent count=42"
+    },
+    {
+      "ts": "2026-09-14T10:00:15Z",
+      "service": "auth-service",
+      "level": "WARN",
+      "message": "slow LDAP bind 820ms (threshold 500ms)"
+    },
+    {
+      "ts": "2026-09-14T02:00:00Z",
+      "service": "auth-service",
+      "level": "INFO",
+      "message": "scheduled secret rotation completed for path secret/transfer-worker/sftp-outbound"
+    },
+    {
+      "ts": "2026-09-14T02:05:12Z",
+      "service": "transfer-worker",
+      "level": "ERROR",
+      "message": "SFTP delivery failed host=sftp.partner-a.example: Auth fail for user svc_outbound"
+    },
+    {
+      "ts": "2026-09-14T02:05:13Z",
+      "service": "transfer-worker",
+      "level": "WARN",
+      "message": "retry 3/3 exhausted, moving file to retry-queue"
+    },
+    {
+      "ts": "2026-09-14T02:06:40Z",
+      "service": "transfer-worker",
+      "level": "ERROR",
+      "message": "SFTP delivery failed host=sftp.partner-b.example: Auth fail for user svc_outbound"
+    },
+    {
+      "ts": "2026-09-14T02:07:01Z",
+      "service": "transfer-worker",
+      "level": "INFO",
+      "message": "credential cache age=6h12m, next refresh at pod restart"
+    },
+    {
+      "ts": "2026-09-14T02:10:22Z",
+      "service": "transfer-worker",
+      "level": "ERROR",
+      "message": "401 Unauthorized from internal key-service: secret version mismatch (cached v14, current v15)"
+    }
+  ]
+}
