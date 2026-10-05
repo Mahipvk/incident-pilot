@@ -1,0 +1,29 @@
+# Mac (Apple Silicon) version: Ollama runs natively on the Mac so it can use the GPU (much faster).
+# Run with:  docker compose -f docker-compose.mac.yml up --build
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: incidentpilot
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d incidentpilot"]
+      interval: 5s
+      retries: 20
+
+  app:
+    build: .
+    ports: ["8080:8080"]
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/incidentpilot
+      OLLAMA_URL: http://host.docker.internal:11434
+      CHAT_MODEL: ${CHAT_MODEL:-qwen2.5:7b}
+      EMBED_MODEL: nomic-embed-text
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pgdata:
